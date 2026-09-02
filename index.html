@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>Intest</title>
+  <meta name="description" content="Diário intestinal (escala de Bristol).">
+  <meta name="theme-color" content="#eef6f2">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Intest">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <!-- ?v= busts Safari's aggressive icon cache when the artwork changes -->
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=1">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=1">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+
+  <div id="offline-banner" hidden>Sem conexão. As alterações serão sincronizadas depois.</div>
+
+  <!-- LOGIN -->
+  <section id="screen-login" class="screen" hidden>
+    <header class="brand">
+      <h1>In<span>test</span></h1>
+      <p class="tagline">Seu diário intestinal.</p>
+    </header>
+
+    <div id="setup-warning" class="notice warn" hidden>
+      <strong>Configuração pendente</strong>
+      <p>As chaves do Firebase em <code>js/config.js</code> ainda precisam ser preenchidas. O app não funciona até lá. Veja o SETUP.md.</p>
+    </div>
+
+    <form id="login-form" autocomplete="on">
+      <label class="field">
+        <span>E-mail</span>
+        <input id="login-email" type="email" autocomplete="username" required placeholder="voce@exemplo.com">
+      </label>
+      <label class="field">
+        <span>Senha</span>
+        <input id="login-password" type="password" autocomplete="current-password" required placeholder="••••••••">
+      </label>
+      <p id="login-error" class="form-error" hidden></p>
+      <button id="btn-login" class="btn primary" type="submit">Entrar</button>
+    </form>
+
+    <div id="install-card" class="notice install" hidden>
+      <strong>Adicione à tela de início</strong>
+      <p>No Safari, toque no botão <span class="share-glyph" aria-hidden="true"></span> Compartilhar e depois em <b>Adicionar à Tela de Início</b>.</p>
+    </div>
+  </section>
+
+  <!-- APP -->
+  <div id="app-shell" hidden>
+    <main id="screen-main" class="screen">
+      <header class="app-header">
+        <h2>Intest</h2>
+        <button id="btn-menu" class="icon-btn menu-btn" type="button" aria-label="Menu">⋯</button>
+      </header>
+
+      <div class="card" id="stats"></div>
+      <div class="card chart-card">
+        <h4 class="chart-title">Distribuição Bristol</h4>
+        <div id="dist-chart"></div>
+      </div>
+
+      <div id="events-list" class="list"></div>
+      <p id="events-empty" class="empty" hidden>Nenhum registro ainda. Toque em ＋ para o primeiro.</p>
+    </main>
+
+    <button id="fab-new" class="fab" aria-label="Novo registro">＋</button>
+  </div>
+
+  <!-- SHEETS -->
+  <div id="sheet-backdrop" hidden></div>
+
+  <!-- New / edit event -->
+  <div id="sheet-event" class="sheet" hidden>
+    <h3 id="sheet-event-title">Novo registro</h3>
+    <form id="event-form">
+      <label class="field">
+        <span>Data e hora</span>
+        <input id="event-at" type="datetime-local" required>
+      </label>
+      <div class="field">
+        <span>Escala de Bristol</span>
+        <div id="bristol-grid" class="bristol-grid"></div>
+        <p id="bristol-label" class="hint"></p>
+      </div>
+      <label class="field">
+        <span>Comentário (opcional)</span>
+        <textarea id="event-note" maxlength="300" rows="2" placeholder="observações…"></textarea>
+      </label>
+      <p id="event-error" class="form-error" hidden></p>
+      <div class="sheet-actions">
+        <button type="button" id="btn-event-delete" class="btn ghost danger" hidden>Excluir</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn ghost" data-close>Cancelar</button>
+        <button type="submit" class="btn primary">Salvar</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Menu: backup + logout -->
+  <div id="sheet-menu" class="sheet" hidden>
+    <h3>Menu</h3>
+    <div class="menu-actions">
+      <button id="btn-export" class="btn" type="button">Exportar backup</button>
+      <button id="btn-import" class="btn" type="button">Importar backup</button>
+      <input id="import-file" type="file" accept="application/json,.json" hidden>
+      <p class="hint center">O backup do Treino também é aceito: só os registros do banheiro são importados.</p>
+      <button id="btn-logout" class="btn ghost danger" type="button">Sair da conta</button>
+    </div>
+    <p id="app-version" class="version hint center">Intest</p>
+    <div class="sheet-actions">
+      <span class="spacer"></span>
+      <button type="button" class="btn ghost" data-close>Fechar</button>
+    </div>
+  </div>
+
+  <div id="toast" hidden></div>
+
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
