@@ -8,10 +8,10 @@
 // ============================================================
 
 export const firebaseConfig = {
-  apiKey: "PASTE_API_KEY",
-  authDomain: "PASTE_PROJECT.firebaseapp.com",
-  projectId: "PASTE_PROJECT_ID",
-  storageBucket: "PASTE_PROJECT.firebasestorage.app",
-  messagingSenderId: "PASTE_SENDER_ID",
-  appId: "PASTE_APP_ID"
+  apiKey: "AIzaSyB6L703eurKQvz90rFdMmhPr4578Pys0tk",
+  authDomain: "intest-524be.firebaseapp.com",
+  projectId: "intest-524be",
+  storageBucket: "intest-524be.firebasestorage.app",
+  messagingSenderId: "324235415077",
+  appId: "1:324235415077:web:4e24d87fea14f8463439cc"
 };
