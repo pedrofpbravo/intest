@@ -20,7 +20,7 @@ See [SETUP.md](SETUP.md) for the full step-by-step: Firebase project, the two ac
 ## Local development
 
 ```bash
-python -m http.server 8082
+python -m http.server 8085
 ```
 
-Open http://localhost:8082/#debug to preview every screen with in-memory sample data (two weeks of events), no Firebase keys needed.
+Open http://localhost:8085/#debug to preview every screen with in-memory sample data (two weeks of events), no Firebase keys needed.

@@ -45,4 +45,4 @@ Functionality: stats card (entries this week, per day, 4-week weekly average), B
 
 ## Local dev
 
-`python -m http.server 8082` (also in `.claude/launch.json`), then http://localhost:8082/#debug. Debug hooks: `window.__state`, `window.__buildBackup`.
+`python -m http.server 8085` (also in `.claude/launch.json`), then http://localhost:8085/#debug. Debug hooks: `window.__state`, `window.__buildBackup`.
