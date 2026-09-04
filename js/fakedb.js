@@ -1,7 +1,7 @@
 // In-memory stand-in for db.js, used when the page is opened with #debug
 // (same trick as Treino/MercadoJa): lets every screen and flow be exercised
-// locally with sample data, no Firebase needed. Ships two weeks of
-// generated events so the stats and the Bristol chart render meaningfully.
+// locally with sample data, no Firebase needed. Ships two weeks of events
+// and eight weeks of weights so both charts render meaningfully.
 
 import { todayStr, addDaysStr, nowLocalStr } from "./logic.js";
 
@@ -16,7 +16,7 @@ function rng() {
   return rngState / 2147483648;
 }
 
-const store = { events: [] };
+const store = { events: [], weights: [] };
 
 (function generateEvents() {
   const now = nowLocalStr();
@@ -42,10 +42,28 @@ const store = { events: [] };
   }
 })();
 
+(function generateWeights() {
+  const today = todayStr();
+  for (let back = 56; back >= 0; back--) {
+    if (rng() < 0.18) continue;
+    const progress = (56 - back) / 56;
+    const kg = Math.round((93 - progress * 7 + (rng() - 0.5) * 0.8) * 10) / 10;
+    store.weights.push({
+      id: id("wt"),
+      at: `${addDaysStr(today, -back)}T08:00`,
+      kg,
+      createdAt: ts(),
+      updatedAt: ts(),
+    });
+  }
+})();
+
 // ---------- listener plumbing (same contract as db.js) ----------
 
-const listeners = [];
-const emit = () => listeners.forEach((cb) => cb(store.events.map((x) => ({ ...x }))));
+const eventListeners = [];
+const weightListeners = [];
+const emitEvents = () => eventListeners.forEach((cb) => cb(store.events.map((x) => ({ ...x }))));
+const emitWeights = () => weightListeners.forEach((cb) => cb(store.weights.map((x) => ({ ...x }))));
 
 export const isConfigured = () => true;
 export const init = () => {};
@@ -54,23 +72,23 @@ export const login = async () => {};
 export const logout = async () => location.reload();
 
 export function listenEvents(cb) {
-  listeners.push(cb);
+  eventListeners.push(cb);
   cb(store.events.map((x) => ({ ...x })));
 }
 
 export async function createEvent({ at, bristol, note }) {
   store.events.push({ id: id("ev"), at, bristol, note: note || "", createdAt: ts(), updatedAt: ts() });
-  emit();
+  emitEvents();
 }
 
 export async function updateEvent(eid, { at, bristol, note }) {
   Object.assign(store.events.find((e) => e.id === eid), { at, bristol, note: note || "", updatedAt: ts() });
-  emit();
+  emitEvents();
 }
 
 export async function deleteEvent(eid) {
   store.events = store.events.filter((e) => e.id !== eid);
-  emit();
+  emitEvents();
 }
 
 export async function importEvents(events) {
@@ -87,5 +105,41 @@ export async function importEvents(events) {
     if (cur) Object.assign(cur, item);
     else store.events.push(item);
   });
-  emit();
+  emitEvents();
+}
+
+export function listenWeights(cb) {
+  weightListeners.push(cb);
+  cb(store.weights.map((x) => ({ ...x })));
+}
+
+export async function createWeight({ at, kg }) {
+  store.weights.push({ id: id("wt"), at, kg, createdAt: ts(), updatedAt: ts() });
+  emitWeights();
+}
+
+export async function updateWeight(wid, { at, kg }) {
+  Object.assign(store.weights.find((weight) => weight.id === wid), { at, kg, updatedAt: ts() });
+  emitWeights();
+}
+
+export async function deleteWeight(wid) {
+  store.weights = store.weights.filter((weight) => weight.id !== wid);
+  emitWeights();
+}
+
+export async function importWeights(weights) {
+  weights.forEach((weight) => {
+    const item = {
+      id: weight.id,
+      at: weight.at,
+      kg: Number(weight.kg),
+      createdAt: ts(),
+      updatedAt: ts(),
+    };
+    const cur = store.weights.find((x) => x.id === item.id);
+    if (cur) Object.assign(cur, item);
+    else store.weights.push(item);
+  });
+  emitWeights();
 }

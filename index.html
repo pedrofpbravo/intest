@@ -12,8 +12,8 @@
   <meta name="apple-mobile-web-app-title" content="Intest">
   <link rel="manifest" href="./manifest.webmanifest">
   <!-- ?v= busts Safari's aggressive icon cache when the artwork changes -->
-  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=1">
-  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=1">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=2">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=2">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
@@ -59,17 +59,34 @@
         <button id="btn-menu" class="icon-btn menu-btn" type="button" aria-label="Menu">⋯</button>
       </header>
 
-      <div class="card" id="stats"></div>
-      <div class="card chart-card">
-        <h4 class="chart-title">Distribuição Bristol</h4>
-        <div id="dist-chart"></div>
+      <div id="view-events">
+        <div class="card" id="stats"></div>
+        <div class="card chart-card">
+          <h4 class="chart-title">Distribuição Bristol</h4>
+          <div id="dist-chart"></div>
+        </div>
+
+        <div id="events-list" class="list"></div>
+        <p id="events-empty" class="empty" hidden>Nenhum registro ainda. Toque em ＋ para o primeiro.</p>
       </div>
 
-      <div id="events-list" class="list"></div>
-      <p id="events-empty" class="empty" hidden>Nenhum registro ainda. Toque em ＋ para o primeiro.</p>
+      <div id="view-weight" hidden>
+        <div class="card chart-card">
+          <h4 class="chart-title">Evolução do peso</h4>
+          <div id="weight-chart"></div>
+        </div>
+
+        <div id="weights-list" class="list"></div>
+        <p id="weights-empty" class="empty" hidden>Nenhum peso registrado ainda. Toque em ＋ para o primeiro.</p>
+      </div>
     </main>
 
     <button id="fab-new" class="fab" aria-label="Novo registro">＋</button>
+
+    <nav class="bottom-nav" aria-label="Seções">
+      <button id="tab-events" class="tab-btn active" type="button" aria-selected="true">Intestino</button>
+      <button id="tab-weight" class="tab-btn" type="button" aria-selected="false">Peso</button>
+    </nav>
   </div>
 
   <!-- SHEETS -->
@@ -95,6 +112,28 @@
       <p id="event-error" class="form-error" hidden></p>
       <div class="sheet-actions">
         <button type="button" id="btn-event-delete" class="btn ghost danger" hidden>Excluir</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn ghost" data-close>Cancelar</button>
+        <button type="submit" class="btn primary">Salvar</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- New / edit weight -->
+  <div id="sheet-weight" class="sheet" hidden>
+    <h3 id="sheet-weight-title">Novo peso</h3>
+    <form id="weight-form">
+      <label class="field">
+        <span>Data e hora</span>
+        <input id="weight-at" type="datetime-local" required>
+      </label>
+      <label class="field">
+        <span>Peso (kg)</span>
+        <input id="weight-kg" type="text" inputmode="decimal" placeholder="86,5" required>
+      </label>
+      <p id="weight-error" class="form-error" hidden></p>
+      <div class="sheet-actions">
+        <button type="button" id="btn-weight-delete" class="btn ghost danger" hidden>Excluir</button>
         <span class="spacer"></span>
         <button type="button" class="btn ghost" data-close>Cancelar</button>
         <button type="submit" class="btn primary">Salvar</button>

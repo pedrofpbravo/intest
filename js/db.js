@@ -106,6 +106,41 @@ export function deleteEvent(id) {
   return deleteDoc(doc(eventsCol(), id));
 }
 
+// ---------- weights (per-user subcollection) ----------
+
+function weightsCol() {
+  const uid = auth?.currentUser?.uid;
+  if (!uid) throw new Error("not signed in");
+  return collection(fs, "users", uid, "weights");
+}
+
+export function listenWeights(cb, errCb) {
+  return onSnapshot(weightsCol(), (snap) => {
+    cb(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+  }, errCb);
+}
+
+export function createWeight({ at, kg }) {
+  return setDoc(doc(weightsCol()), {
+    at,
+    kg,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export function updateWeight(id, { at, kg }) {
+  return updateDoc(doc(weightsCol(), id), {
+    at,
+    kg,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export function deleteWeight(id) {
+  return deleteDoc(doc(weightsCol(), id));
+}
+
 // ---------- backup import ----------
 // Takes a normalized array [{id, at, bristol, note}] (main.js accepts the
 // Treino backup, the Intest backup or a bare array and normalizes it).
@@ -121,6 +156,22 @@ export async function importEvents(events) {
         at: e.at,
         bristol: Number(e.bristol) || 4,
         note: e.note || "",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    });
+    await batch.commit();
+  }
+}
+
+export async function importWeights(weights) {
+  const col = weightsCol();
+  for (let i = 0; i < weights.length; i += 400) {
+    const batch = writeBatch(fs);
+    weights.slice(i, i + 400).forEach((weight) => {
+      batch.set(doc(col, weight.id), {
+        at: weight.at,
+        kg: Number(weight.kg),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });

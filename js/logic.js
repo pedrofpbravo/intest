@@ -44,6 +44,12 @@ export function addDaysStr(dateStr, days) {
   return todayStr(d);
 }
 
+export function parseKg(str) {
+  const value = Number(String(str).trim().replace(",", "."));
+  if (!Number.isFinite(value) || value < 20 || value > 400) return null;
+  return Math.round(value * 100) / 100;
+}
+
 // ---------- Bristol ----------
 
 export const BRISTOL_LABELS = {
@@ -90,5 +96,7 @@ export function bristolStats(events, today) {
 
 // ---------- sorting ----------
 
-export const sortEvents = (list) =>
-  [...list].sort((a, b) => (a.at < b.at ? 1 : -1));
+const byAtDesc = (a, b) => (a.at === b.at ? 0 : a.at < b.at ? 1 : -1);
+
+export const sortEvents = (list) => [...list].sort(byAtDesc);
+export const sortWeights = (list) => [...list].sort(byAtDesc);

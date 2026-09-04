@@ -5,7 +5,7 @@
 // instant (and works offline).
 
 // Open the app with #debug to preview every screen and flow with sample
-// in-memory data (two weeks of events), no Firebase needed.
+// in-memory sample data, no Firebase needed.
 import * as realDb from "./db.js";
 import * as fakeDb from "./fakedb.js";
 const db = location.hash === "#debug" ? fakeDb : realDb;
@@ -16,13 +16,15 @@ import {
   BRISTOL_LABELS,
   bristolClass,
   bristolStats,
+  parseKg,
   sortEvents,
+  sortWeights,
 } from "./logic.js";
-import { barChart } from "./charts.js";
+import { barChart, lineChart } from "./charts.js";
 
 // Shown in the menu so anyone can tell which deploy a phone is running.
 // Keep in sync with CACHE in sw.js.
-const APP_VERSION = "v1";
+const APP_VERSION = "v2";
 
 const $ = (id) => document.getElementById(id);
 
@@ -30,7 +32,10 @@ const $ = (id) => document.getElementById(id);
 
 const state = {
   events: [], // raw; sorted at render time
+  weights: [],
+  view: "events",
   editingId: null,
+  editingWeightId: null,
   draftBristol: null,
   listenersStarted: false,
 };
@@ -58,7 +63,7 @@ function closeSheets() {
 
 // ---------- main screen ----------
 
-function render() {
+function renderEvents() {
   const stats = bristolStats(state.events, todayStr());
   const statsEl = $("stats");
   statsEl.innerHTML = "";
@@ -122,6 +127,67 @@ function render() {
   $("events-empty").hidden = events.length > 0;
 }
 
+const fmtKg = (kg) => String(Number(kg)).replace(".", ",");
+
+function renderWeights() {
+  const weights = sortWeights(state.weights);
+  $("weight-chart").innerHTML = lineChart([...weights].reverse());
+
+  const listEl = $("weights-list");
+  listEl.innerHTML = "";
+  if (weights.length > 0) {
+    const ul = document.createElement("ul");
+    ul.className = "group-items";
+    weights.forEach((weight, i) => {
+      const li = document.createElement("li");
+      li.className = "item-row";
+
+      const badge = document.createElement("span");
+      badge.className = "badge-pill wide ok";
+      badge.textContent = fmtKg(weight.kg);
+
+      const main = document.createElement("div");
+      main.className = "item-main";
+      const name = document.createElement("span");
+      name.className = "item-name";
+      name.textContent = fmtDateTime(weight.at);
+      main.appendChild(name);
+
+      const older = weights[i + 1];
+      if (older) {
+        const delta = Math.round((Number(weight.kg) - Number(older.kg)) * 100) / 100;
+        const sub = document.createElement("span");
+        sub.className = "item-sub";
+        sub.textContent = `${delta >= 0 ? "+" : ""}${fmtKg(delta)} kg`;
+        main.appendChild(sub);
+      }
+
+      li.append(badge, main);
+      li.addEventListener("click", () => openWeightSheet(weight.id));
+      ul.appendChild(li);
+    });
+    listEl.appendChild(ul);
+  }
+  $("weights-empty").hidden = weights.length > 0;
+}
+
+function render() {
+  renderEvents();
+  renderWeights();
+}
+
+function setView(view) {
+  state.view = view;
+  const eventsOn = view === "events";
+  $("view-events").hidden = !eventsOn;
+  $("view-weight").hidden = eventsOn;
+  $("tab-events").classList.toggle("active", eventsOn);
+  $("tab-events").setAttribute("aria-selected", String(eventsOn));
+  $("tab-weight").classList.toggle("active", !eventsOn);
+  $("tab-weight").setAttribute("aria-selected", String(!eventsOn));
+  $("fab-new").setAttribute("aria-label", eventsOn ? "Novo registro" : "Novo peso");
+}
+
 // ---------- event sheet (new / edit) ----------
 
 function renderBristolGrid() {
@@ -173,6 +239,37 @@ function submitEventForm(e) {
   closeSheets();
 }
 
+// ---------- weight sheet (new / edit) ----------
+
+function openWeightSheet(weightId) {
+  state.editingWeightId = weightId || null;
+  const weight = weightId ? state.weights.find((item) => item.id === weightId) : null;
+  $("sheet-weight-title").textContent = weight ? "Editar peso" : "Novo peso";
+  $("weight-at").value = weight ? weight.at : nowLocalStr();
+  $("weight-kg").value = weight ? fmtKg(weight.kg) : "";
+  $("weight-error").hidden = true;
+  $("btn-weight-delete").hidden = !weight;
+  openSheet("sheet-weight");
+}
+
+function submitWeightForm(e) {
+  e.preventDefault();
+  const at = $("weight-at").value;
+  const kg = parseKg($("weight-kg").value);
+  const errEl = $("weight-error");
+  if (!at || kg === null) {
+    errEl.textContent = "Informe um peso válido.";
+    errEl.hidden = false;
+    return;
+  }
+  const data = { at, kg };
+  const op = state.editingWeightId
+    ? db.updateWeight(state.editingWeightId, data)
+    : db.createWeight(data);
+  op.catch(() => toast("Erro ao salvar peso."));
+  closeSheets();
+}
+
 // ---------- backup ----------
 
 function buildBackup() {
@@ -185,6 +282,11 @@ function buildBackup() {
       at: e.at,
       bristol: e.bristol,
       note: e.note || "",
+    })),
+    weights: sortWeights(state.weights).map((weight) => ({
+      id: weight.id,
+      at: weight.at,
+      kg: weight.kg,
     })),
   };
 }
@@ -217,19 +319,18 @@ async function exportBackup() {
 }
 
 // Accepts three shapes: the Treino backup ({bathroom: [...]}), the Intest
-// backup ({events: [...]}) or a bare array. Returns a normalized array of
-// {id, at, bristol, note}. Ids are preserved (import twice = overwrite, not
-// duplicate); entries without an id get a deterministic one from `at`.
+// backup ({events: [...], weights: [...]}) or a bare array. Ids are preserved
+// (import twice = overwrite, not duplicate); missing ids are deterministic.
 function normalizeBackup(data) {
-  const raw = Array.isArray(data)
+  const rawEvents = Array.isArray(data)
     ? data
     : Array.isArray(data?.events)
       ? data.events
       : Array.isArray(data?.bathroom)
         ? data.bathroom
         : null;
-  if (!raw) return null;
-  return raw
+  if (!rawEvents) return null;
+  const events = rawEvents
     .filter((e) => e && typeof e.at === "string" && e.at.length >= 16)
     .map((e) => ({
       id: e.id || `imp-${e.at.replace(/[T:]/g, "-")}`,
@@ -237,27 +338,47 @@ function normalizeBackup(data) {
       bristol: Number(e.bristol) || 4,
       note: e.note || "",
     }));
+  const rawWeights = !Array.isArray(data) && Array.isArray(data?.events) && Array.isArray(data?.weights)
+    ? data.weights
+    : [];
+  const weights = rawWeights
+    .filter((weight) =>
+      weight &&
+      typeof weight.at === "string" &&
+      weight.at.length >= 16 &&
+      Number.isFinite(Number(weight.kg))
+    )
+    .map((weight) => ({
+      id: weight.id || `wimp-${weight.at.replace(/[T:]/g, "-")}`,
+      at: weight.at,
+      kg: Number(weight.kg),
+    }));
+  return { events, weights };
 }
 
 function importBackupFile(file) {
   file
     .text()
     .then((text) => {
-      const events = normalizeBackup(JSON.parse(text));
-      if (!events) throw new Error("formato");
-      if (events.length === 0) {
-        toast("O arquivo não tem registros.");
+      const backup = normalizeBackup(JSON.parse(text));
+      if (!backup) throw new Error("formato");
+      const { events, weights } = backup;
+      if (events.length === 0 && weights.length === 0) {
+        toast("O arquivo não tem registros nem pesos.");
         return;
       }
       if (
         !confirm(
-          `Importar ${events.length} registros?\nDocs atuais com o mesmo id serão sobrescritos; nada é apagado.`
+          `Importar ${events.length} registros e ${weights.length} pesos?\nDocs atuais com o mesmo id serão sobrescritos; nada é apagado.`
         )
       ) {
         return;
       }
-      db.importEvents(events)
-        .then(() => toast(`${events.length} registros importados.`))
+      Promise.all([
+        events.length ? db.importEvents(events) : Promise.resolve(),
+        weights.length ? db.importWeights(weights) : Promise.resolve(),
+      ])
+        .then(() => toast(`${events.length} registros e ${weights.length} pesos importados.`))
         .catch(() => toast("Erro ao importar o backup."));
     })
     .catch(() => toast("Arquivo de backup inválido."));
@@ -282,6 +403,13 @@ function startListeners() {
   db.listenEvents(
     (events) => {
       state.events = events;
+      render();
+    },
+    () => toast("Erro de conexão com o banco.")
+  );
+  db.listenWeights(
+    (weights) => {
+      state.weights = weights;
       render();
     },
     () => toast("Erro de conexão com o banco.")
@@ -329,12 +457,27 @@ function wire() {
   $("login-form").addEventListener("submit", handleLogin);
 
   // events
-  $("fab-new").addEventListener("click", () => openEventSheet(null));
+  $("fab-new").addEventListener("click", () => {
+    if (state.view === "events") openEventSheet(null);
+    else openWeightSheet(null);
+  });
+  $("tab-events").addEventListener("click", () => setView("events"));
+  $("tab-weight").addEventListener("click", () => setView("weight"));
   $("event-form").addEventListener("submit", submitEventForm);
   $("btn-event-delete").addEventListener("click", () => {
     const ev = state.events.find((e) => e.id === state.editingId);
     if (ev && confirm("Excluir este registro?")) {
       db.deleteEvent(ev.id).catch(() => toast("Erro ao excluir."));
+      closeSheets();
+    }
+  });
+
+  // weights
+  $("weight-form").addEventListener("submit", submitWeightForm);
+  $("btn-weight-delete").addEventListener("click", () => {
+    const weight = state.weights.find((item) => item.id === state.editingWeightId);
+    if (weight && confirm("Excluir este peso?")) {
+      db.deleteWeight(weight.id).catch(() => toast("Erro ao excluir."));
       closeSheets();
     }
   });
@@ -366,6 +509,7 @@ function wire() {
 
 function boot() {
   wire();
+  setView(state.view);
   $("app-version").textContent = `Intest · ${APP_VERSION}`;
   if (db === fakeDb) {
     // #debug test hooks
