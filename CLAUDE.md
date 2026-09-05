@@ -34,7 +34,7 @@ You (Claude/Fable) are the **orchestrator and tech lead** for this project. You 
 
 Personal bathroom diary (Bristol scale 1-7) for TWO people, each with a private history. Split out of the Treino app (`04. app gym`) in Sep 2026; Pedro's pre-split history was migrated in via the backup import. Single-screen mobile PWA, UI in pt-BR, installed on iPhones from GitHub Pages.
 
-Functionality: stats card (entries this week, per day, 4-week weekly average), Bristol distribution bar chart, event list (newest first), FAB opens the add sheet (datetime-local defaulting to now, Bristol 1-7 picker, optional note), tapping a list row opens the same sheet for edit/delete. A "⋯" menu sheet holds backup export/import and logout.
+Functionality: stats card (entries this week, per day, 4-week weekly average), Bristol distribution bar chart, frequency-over-time bar chart with a Semana/Mes/Ano segmented filter (last 12 weeks / last 12 months / all years, selection persisted in localStorage under `intest.freq`), event list (newest first), FAB opens the add sheet (datetime-local defaulting to now, Bristol 1-7 picker, optional note), tapping a list row opens the same sheet for edit/delete. A "⋯" menu sheet holds backup export/import and logout.
 
 ## Architecture (same family as Treino / MercadoJá)
 
@@ -51,8 +51,8 @@ Functionality: stats card (entries this week, per day, 4-week weekly average), B
 ## Files
 
 - `js/config.js`: firebaseConfig only ("the only file you edit").
-- `js/logic.js`: pure helpers (no DOM/Firebase): local date handling, BRISTOL_LABELS, bristolClass, bristolStats, sortEvents.
-- `js/charts.js`: pure SVG-string builder (barChart). No chart libraries.
+- `js/logic.js`: pure helpers (no DOM/Firebase): local date handling, BRISTOL_LABELS, bristolClass, bristolStats, frequencyBuckets, sortEvents.
+- `js/charts.js`: pure SVG-string builders (barChart, lineChart). No chart libraries. `barChart`'s `labelEvery` thins a crowded x axis, counting back from the last bar so the newest period always keeps its label.
 - `js/db.js`: the only file touching Firebase. Flat verb-named API: listenEvents, createEvent, updateEvent, deleteEvent, importEvents.
 - `js/fakedb.js`: same exports, in-memory.
 - `js/main.js`: all UI. State object + renderers + wiring + boot.

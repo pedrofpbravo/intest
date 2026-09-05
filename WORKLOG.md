@@ -32,3 +32,29 @@
 - Runtime app-server do plugin Codex rejeita CreateProcess nesta máquina; delegações devem usar `codex exec -s workspace-write` direto no CLI até o plugin ser corrigido.
 - Porta 8085 ocupada por processo python zumbi (pid 2900, não identificado/não morto); dev agora em 8090.
 - Pedro segue logado na conta pessoal no browser local desta máquina (sair pelo menu ⋯ se não quiser manter).
+
+## 2026-09-04 (2) — Gráfico de frequência (Semana / Mês / Ano)
+
+### Plano aprovado
+Card novo "Frequência" na aba Intestino, abaixo de "Distribuição Bristol": barras = quantos registros por período, com filtro segmentado Semana / Mês / Ano. Janela fixa (12 semanas / 12 meses / todos os anos), sem paginação. Barras em cor única (`var(--accent)`), contagem impressa acima. Escolhas confirmadas pelo Pedro em uma rodada única de perguntas.
+
+### Decisões
+- Sem paginação para períodos antigos, sem barras empilhadas por Bristol, sem linha de média, sem aba nova.
+- Semanas começam na segunda (reusa `weekStartStr`); rótulos "01/09" (semana), "set" (mês), "2026" (ano).
+- Períodos vazios permanecem no resultado com valor 0, para virarem barras zeradas em vez de sumirem.
+- Filtro persistido em `localStorage` (`intest.freq`).
+- fakedb passa de 14 dias para ~430 dias (431 eventos determinísticos), senão `#debug` não exercita as views de mês e ano.
+
+### Delegações
+- [enviada] Codex (`codex exec -s workspace-write -m gpt-5.6-sol -c model_reasoning_effort=xhigh`, sessão 01a06ef6): 7 arquivos — logic.js (`frequencyBuckets`), charts.js (`labelEvery`), index.html (card), styles.css (pills), main.js (state + render + wiring), fakedb.js (histórico maior), bump v3.
+
+### Resultados / revisão
+- Codex entregou exatamente os 7 arquivos permitidos, sem arquivos novos, sem commit. Transporte via CLI funcionou (plugin segue quebrado).
+- Verificação consolidada por Fable no browser (#debug, viewport 375x812), tudo PASS: 12 barras na semana (última = 31/08, semana atual), 12 no mês (última = set), 2 no ano; soma do ano = 431 = total de eventos; recontagem independente por ano (2025=192, 2026=239) bate com o gráfico; spot-check da semana 03/08-09/08 = 8 registros, igual à barra; mês corrente = 4 nos dois métodos; pills trocam o gráfico e o `aria-pressed`; escolha sobrevive ao reload; console sem erros; sem scroll horizontal; Bristol, lista (431 linhas), sheet de novo/editar e aba Peso intactos.
+- Fix de Fable 1 (charts.js): `labelEvery` contava do primeiro item, o que forçava o último rótulo colado no vizinho (folga de 3,4 px entre "24/08" e "31/08"). Passou a contar de trás para frente: 6 rótulos igualmente espaçados, folga mínima 27,7 px. Bristol (labelEvery=1) segue com os 7 rótulos.
+- Fix de Fable 2 (main.js): a leitura do `localStorage` estava no topo do módulo sem try/catch. Safari com armazenamento bloqueado lança na hora do load e o app inteiro não sobe no iPhone. Virou `savedFreqRange()` com try/catch.
+- Screenshot visual não foi possível (painel do browser não estava em exibição, sem composição de frames); a verificação foi feita medindo o DOM/SVG renderado (getBoundingClientRect dos rótulos, contagem de barras e valores).
+
+### Aberto
+- Falta commit + push e o bump já está feito (APP_VERSION v3 / CACHE intest-v3): decidir com o Pedro quando publicar no GitHub Pages.
+- Servidor python na 8090 fica órfão quando o Codex o inicia; matar o pid antes de subir o preview (aconteceu nesta sessão, pid 39804).

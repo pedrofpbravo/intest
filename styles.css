@@ -162,6 +162,11 @@ input, select { font: inherit; }
 
 .chart-card svg { width: 100%; height: auto; display: block; }
 .chart-title { margin: 0 0 8px; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; font-weight: 800; }
+.chart-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
+.chart-head .chart-title { margin: 0; }
+.segmented { display: inline-flex; background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 2px; gap: 2px; }
+.seg-btn { border: 0; background: transparent; color: var(--muted); font-weight: 800; font-size: 11px; padding: 5px 10px; border-radius: 999px; cursor: pointer; font-family: inherit; }
+.seg-btn.active { background: var(--accent); color: #fff; }
 
 /* ---------- stats ---------- */
 #stats { display: flex; gap: 10px; }

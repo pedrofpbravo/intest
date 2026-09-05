@@ -16,6 +16,7 @@ import {
   BRISTOL_LABELS,
   bristolClass,
   bristolStats,
+  frequencyBuckets,
   parseKg,
   sortEvents,
   sortWeights,
@@ -24,16 +25,29 @@ import { barChart, lineChart } from "./charts.js";
 
 // Shown in the menu so anyone can tell which deploy a phone is running.
 // Keep in sync with CACHE in sw.js.
-const APP_VERSION = "v2";
+const APP_VERSION = "v3";
 
 const $ = (id) => document.getElementById(id);
 
 // ---------- state ----------
 
+// Touching localStorage throws outright when Safari refuses storage (private
+// mode, blocked cookies). This runs at module load, so an unguarded read would
+// keep the whole app from booting on the phone.
+function savedFreqRange() {
+  try {
+    const saved = localStorage.getItem("intest.freq");
+    return ["week", "month", "year"].includes(saved) ? saved : "week";
+  } catch {
+    return "week";
+  }
+}
+
 const state = {
   events: [], // raw; sorted at render time
   weights: [],
   view: "events",
+  freqRange: savedFreqRange(),
   editingId: null,
   editingWeightId: null,
   draftBristol: null,
@@ -90,6 +104,7 @@ function renderEvents() {
       color: colors[bristolClass(i + 1)],
     }))
   );
+  renderFrequency();
 
   const listEl = $("events-list");
   listEl.innerHTML = "";
@@ -125,6 +140,26 @@ function renderEvents() {
     listEl.appendChild(ul);
   }
   $("events-empty").hidden = events.length > 0;
+}
+
+function renderFrequency() {
+  const bars = frequencyBuckets(state.events, state.freqRange, todayStr());
+  $("freq-chart").innerHTML = barChart(bars, {
+    color: "var(--accent)",
+    labelEvery: state.freqRange === "week" ? 2 : 1,
+  });
+  const total = bars.reduce((sum, bar) => sum + bar.value, 0);
+  const rangeLabel = {
+    week: "Últimas 12 semanas",
+    month: "Últimos 12 meses",
+    year: "Por ano",
+  }[state.freqRange];
+  $("freq-summary").textContent = `${rangeLabel} · ${total} ${total === 1 ? "registro" : "registros"}`;
+  $("freq-range").querySelectorAll(".seg-btn").forEach((button) => {
+    const active = button.dataset.range === state.freqRange;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
 }
 
 const fmtKg = (kg) => String(Number(kg)).replace(".", ",");
@@ -463,6 +498,18 @@ function wire() {
   });
   $("tab-events").addEventListener("click", () => setView("events"));
   $("tab-weight").addEventListener("click", () => setView("weight"));
+  $("freq-range").addEventListener("click", (e) => {
+    const button = e.target.closest(".seg-btn");
+    const range = button?.dataset.range;
+    if (!["week", "month", "year"].includes(range)) return;
+    state.freqRange = range;
+    try {
+      localStorage.setItem("intest.freq", range);
+    } catch {
+      // The chart still works when Safari private mode refuses storage writes.
+    }
+    renderFrequency();
+  });
   $("event-form").addEventListener("submit", submitEventForm);
   $("btn-event-delete").addEventListener("click", () => {
     const ev = state.events.find((e) => e.id === state.editingId);

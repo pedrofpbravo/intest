@@ -1,6 +1,6 @@
 // In-memory stand-in for db.js, used when the page is opened with #debug
 // (same trick as Treino/MercadoJa): lets every screen and flow be exercised
-// locally with sample data, no Firebase needed. Ships two weeks of events
+// locally with sample data, no Firebase needed. Ships about 14 months of events
 // and eight weeks of weights so both charts render meaningfully.
 
 import { todayStr, addDaysStr, nowLocalStr } from "./logic.js";
@@ -21,7 +21,7 @@ const store = { events: [], weights: [] };
 (function generateEvents() {
   const now = nowLocalStr();
   const today = todayStr();
-  for (let back = 14; back >= 1; back--) {
+  for (let back = 430; back >= 0; back--) {
     const date = addDaysStr(today, -back);
     const n = rng() < 0.72 ? 1 : rng() < 0.5 ? 2 : 0;
     for (let i = 0; i < n; i++) {

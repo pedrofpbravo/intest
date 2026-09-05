@@ -7,7 +7,7 @@
 // DEPLOY RITUAL: bump CACHE below on every deploy.
 
 // Keep in sync with APP_VERSION in js/main.js.
-const CACHE = "intest-v2";
+const CACHE = "intest-v3";
 
 self.addEventListener("install", () => {
   self.skipWaiting();

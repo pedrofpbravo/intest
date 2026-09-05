@@ -66,6 +66,19 @@
           <div id="dist-chart"></div>
         </div>
 
+        <div class="card chart-card">
+          <div class="chart-head">
+            <h4 class="chart-title">Frequência</h4>
+            <div id="freq-range" class="segmented" role="group" aria-label="Período">
+              <button type="button" class="seg-btn active" data-range="week" aria-pressed="true">Semana</button>
+              <button type="button" class="seg-btn" data-range="month" aria-pressed="false">Mês</button>
+              <button type="button" class="seg-btn" data-range="year" aria-pressed="false">Ano</button>
+            </div>
+          </div>
+          <div id="freq-chart"></div>
+          <p id="freq-summary" class="hint center"></p>
+        </div>
+
         <div id="events-list" class="list"></div>
         <p id="events-empty" class="empty" hidden>Nenhum registro ainda. Toque em ＋ para o primeiro.</p>
       </div>

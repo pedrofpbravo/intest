@@ -94,6 +94,60 @@ export function bristolStats(events, today) {
   };
 }
 
+// The chart window is fixed (no paging); empty periods stay in the result so
+// gaps render as zero bars instead of disappearing.
+export function frequencyBuckets(events, granularity, today = todayStr()) {
+  const dates = events
+    .map((e) => (e.at || "").slice(0, 10))
+    .filter(Boolean);
+  let bars;
+
+  if (granularity === "week") {
+    const currentWeek = weekStartStr(today);
+    const firstWeek = addDaysStr(currentWeek, -77);
+    bars = Array.from({ length: 12 }, (_, i) => {
+      const key = addDaysStr(firstWeek, i * 7);
+      return { key, label: `${key.slice(8, 10)}/${key.slice(5, 7)}`, value: 0 };
+    });
+  } else if (granularity === "month") {
+    const monthLabels = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+    const currentYear = Number(today.slice(0, 4));
+    const currentMonth = Number(today.slice(5, 7)) - 1;
+    bars = Array.from({ length: 12 }, (_, i) => {
+      const monthIndex = currentYear * 12 + currentMonth - 11 + i;
+      const year = Math.floor(monthIndex / 12);
+      const month = monthIndex % 12;
+      return {
+        key: `${year}-${pad(month + 1)}`,
+        label: monthLabels[month],
+        value: 0,
+      };
+    });
+  } else {
+    const currentYear = Number(today.slice(0, 4));
+    const firstYear = dates.reduce(
+      (earliest, date) => Math.min(earliest, Number(date.slice(0, 4))),
+      currentYear
+    );
+    bars = Array.from({ length: currentYear - firstYear + 1 }, (_, i) => {
+      const key = String(firstYear + i);
+      return { key, label: key, value: 0 };
+    });
+  }
+
+  const byKey = new Map(bars.map((bar) => [bar.key, bar]));
+  dates.forEach((date) => {
+    const key = granularity === "week"
+      ? weekStartStr(date)
+      : granularity === "month"
+        ? date.slice(0, 7)
+        : date.slice(0, 4);
+    const bar = byKey.get(key);
+    if (bar) bar.value++;
+  });
+  return bars;
+}
+
 // ---------- sorting ----------
 
 const byAtDesc = (a, b) => (a.at === b.at ? 0 : a.at < b.at ? 1 : -1);
