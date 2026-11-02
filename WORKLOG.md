@@ -58,3 +58,23 @@ Card novo "Frequência" na aba Intestino, abaixo de "Distribuição Bristol": ba
 ### Aberto
 - Falta commit + push e o bump já está feito (APP_VERSION v3 / CACHE intest-v3): decidir com o Pedro quando publicar no GitHub Pages.
 - Servidor python na 8090 fica órfão quando o Codex o inicia; matar o pid antes de subir o preview (aconteceu nesta sessão, pid 39804).
+
+## 2026-11-02 — Aba Peso primeiro + dia da semana nos cards
+
+### Plano aprovado
+Peso passa a ser a primeira aba (esquerda) e a aba aberta ao iniciar, sem lembrar a última aba. Cards das duas abas mostram o dia da semana: "01/11 dom 07:50". Só nos cards (não na sheet de edição). Escolhas confirmadas pelo Pedro em uma rodada de perguntas.
+
+### Protocolo
+Primeira execução do novo protocolo (Opus orquestra, agentes Sonnet implementam e revisam). Codex não foi usado.
+
+### Delegações
+- [enviada] Sonnet implementador: index.html (ordem das abas + `hidden` estático trocado), main.js (`state.view = "weight"`), logic.js (`WEEKDAYS` + `fmtDateTime`, weekday via `dateFromStr`, sem UTC).
+- [enviada] Sonnet revisor (agente separado): verificação consolidada no browser em #debug.
+
+### Resultados / revisão
+- Revisor: 5/5 critérios PASS. Peso abre ativo e à esquerda; troca de aba e FAB corretos; 48 linhas de peso e 431 de intestino com dia da semana conferido contra `new Date(y,m-1,d).getDay()`; 23:30 e 29/02 corretos; `fmtDate` segue "DD/MM"; console sem erros.
+- Bump do deploy feito pelo orquestrador: APP_VERSION v4 / CACHE intest-v4.
+- Também neste commit: CLAUDE.md reescrito para o protocolo Opus + Sonnet.
+
+### Aberto
+- Verificar no iPhone depois do deploy (o SW novo só assume depois de recarregar).

@@ -25,9 +25,12 @@ export function fmtDate(dateStr) {
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}`;
 }
 
-// "2026-08-30T14:23" -> "30/08 14:23"
+const WEEKDAYS = ["dom", "seg", "ter", "qua", "qui", "sex", "sab"];
+
+// "2026-11-01T07:50" -> "01/11 dom 07:50"
 export function fmtDateTime(atStr) {
-  return `${fmtDate(atStr)} ${atStr.slice(11, 16)}`;
+  const wd = WEEKDAYS[dateFromStr(atStr).getDay()];
+  return `${fmtDate(atStr)} ${wd} ${atStr.slice(11, 16)}`;
 }
 
 // Monday of the week containing dateStr, as a date string (BR weeks).

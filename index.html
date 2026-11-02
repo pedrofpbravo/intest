@@ -59,7 +59,7 @@
         <button id="btn-menu" class="icon-btn menu-btn" type="button" aria-label="Menu">⋯</button>
       </header>
 
-      <div id="view-events">
+      <div id="view-events" hidden>
         <div class="card" id="stats"></div>
         <div class="card chart-card">
           <h4 class="chart-title">Distribuição Bristol</h4>
@@ -83,7 +83,7 @@
         <p id="events-empty" class="empty" hidden>Nenhum registro ainda. Toque em ＋ para o primeiro.</p>
       </div>
 
-      <div id="view-weight" hidden>
+      <div id="view-weight">
         <div class="card chart-card">
           <h4 class="chart-title">Evolução do peso</h4>
           <div id="weight-chart"></div>
@@ -97,8 +97,8 @@
     <button id="fab-new" class="fab" aria-label="Novo registro">＋</button>
 
     <nav class="bottom-nav" aria-label="Seções">
-      <button id="tab-events" class="tab-btn active" type="button" aria-selected="true">Intestino</button>
-      <button id="tab-weight" class="tab-btn" type="button" aria-selected="false">Peso</button>
+      <button id="tab-weight" class="tab-btn active" type="button" aria-selected="true">Peso</button>
+      <button id="tab-events" class="tab-btn" type="button" aria-selected="false">Intestino</button>
     </nav>
   </div>
 

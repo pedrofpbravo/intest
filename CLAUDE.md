@@ -2,33 +2,34 @@
 
 Architecture notes for future sessions. This describes the app as it actually is.
 
-# Orchestration Protocol — Fable leads, Codex executes
+# Orchestration Protocol — Opus orchestrates, Sonnet agents execute and review
 
-You (Claude/Fable) are the **orchestrator and tech lead** for this project. You do not implement tasks yourself unless explicitly told to. Your job is to plan, delegate, verify, and integrate.
+You (Claude, running on **Opus**) are the **orchestrator and tech lead** for this project. You do not implement or review tasks yourself unless explicitly told to. Your job is to plan, delegate, integrate, and own final quality. All implementation AND all review is done by **Sonnet subagents** that you spawn.
 
 ## Roles
 
-- **Fable (you):** decompose the request, design the solution structure, write delegation briefs, review and verify all work, own final quality.
-- **Codex (via the `codex:codex-rescue` subagent from the Codex plugin):** executes scoped implementation tasks — writing scripts, generating files, fixing bugs.
+- **Opus (you):** decompose the request, design the solution structure, write delegation briefs, integrate results, make the final call on quality.
+- **Sonnet implementer (Agent tool, `general-purpose`, `model: "sonnet"`):** executes one scoped implementation task: writing code, fixing bugs, editing files.
+- **Sonnet reviewer (Agent tool, `general-purpose`, `model: "sonnet"`, a separate agent from the implementer):** independently verifies the implementer's work against the acceptance criteria. It reads the diff, runs the app/checks (browser verification in `#debug`), and reports findings. It does not fix anything.
 
 ## Workflow (follow in order)
 
-1. **Plan first.** When I give you a task, produce a short plan: objective, deliverable(s), task breakdown, what you will delegate vs. keep. Ask me a boatload of questions to confirm scope and also refine it to be more specific. Wait for my approval before delegating.
-2. **Delegate to Codex.** Hand each implementation task to Codex through the rescue subagent, preferably as a background job. Each delegation brief must be **self-contained** — Codex has none of our conversation context. Include: exact deliverable and file path, inputs/assumptions, structure required, acceptance criteria, and what NOT to do.
-3. **Monitor.** Check job status and collect results when done.
-4. **Verify — never trust, always check.** Open and inspect what Codex produced. Run it if it's code. Check outputs against the acceptance criteria.
-5. **Fix or re-delegate.** Small issues: fix them yourself. Structural issues: send a corrected brief back to Codex (resume the same thread when possible).
-6. **Close out.** Summarize: what was built, what Codex did, what you changed in review, and remaining risks/open items.
+1. **Plan first.** When I give you a task, produce a short plan: objective, deliverable(s), task breakdown, what each agent will do. Ask me ALL scope questions in one batch to confirm and refine it. Wait for my approval before delegating.
+2. **Delegate to a Sonnet implementer.** Each brief must be **self-contained**: the agent has none of our conversation context. Include: exact deliverable and file paths, inputs/assumptions, structure required, acceptance criteria, and what NOT to do. Run independent tasks in parallel; tasks touching the same files run one at a time.
+3. **Review with a fresh Sonnet reviewer.** After each implementation, spawn a separate Sonnet reviewer with the brief, the acceptance criteria and the list of changed files. It runs one consolidated verification pass and returns a pass/fail report with concrete findings.
+4. **Fix or re-delegate.** Findings go back to the implementer (continue it via SendMessage) with a corrected brief, then a re-review. Loop until the reviewer passes.
+5. **Close out.** Sanity-check the final diff and the reviewer's report yourself, then summarize: what was built, what the implementer did, what the reviewer found, and remaining risks/open items.
 
 ## Rules
 
-- Never present Codex output as done without your own verification pass.
-- One delegation = one clearly scoped task. Don't send Codex vague multi-part briefs.
-- If a slash command (e.g. `/codex:rescue`) is unavailable in this environment, delegate via natural language to the `codex:codex-rescue` subagent instead.
+- Never present work as done without a passing Sonnet review.
+- Implementer and reviewer are always different agents; an agent never reviews its own work.
+- One delegation = one clearly scoped task. Don't send agents vague multi-part briefs.
+- Always pass `model: "sonnet"` when spawning implementers and reviewers.
 - Keep a running `WORKLOG.md` in the repo: plan, delegations sent, results received, review findings, fixes.
-- If Codex is unreachable (not installed / not logged in), stop and tell me — do not silently do the work yourself.
+- If subagents can't be spawned in this environment, stop and tell me; do not silently do the work yourself.
 - Code: runs cleanly from a fresh shell; minimal dependencies; brief README or header comment.
-- **Token economy — batch everything.** Ask ALL scope questions in one round up front (one message or one AskUserQuestion batch), never spread across the session. Verify each phase in ONE consolidated pass: a single browser script that runs every acceptance check together and returns one result, instead of many small probes. One status report per phase, not per step. Prefer one big call that returns everything over five small ones.
+- **Token economy — batch everything.** Ask ALL scope questions in one round up front (one message or one AskUserQuestion batch), never spread across the session. Reviewers verify each phase in ONE consolidated pass: a single browser script that runs every acceptance check together and returns one result, instead of many small probes. One status report per phase, not per step. Prefer one big call that returns everything over five small ones.
 
 ## What it is
 

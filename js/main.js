@@ -25,7 +25,7 @@ import { barChart, lineChart } from "./charts.js";
 
 // Shown in the menu so anyone can tell which deploy a phone is running.
 // Keep in sync with CACHE in sw.js.
-const APP_VERSION = "v3";
+const APP_VERSION = "v4";
 
 const $ = (id) => document.getElementById(id);
 
@@ -46,7 +46,7 @@ function savedFreqRange() {
 const state = {
   events: [], // raw; sorted at render time
   weights: [],
-  view: "events",
+  view: "weight",
   freqRange: savedFreqRange(),
   editingId: null,
   editingWeightId: null,
